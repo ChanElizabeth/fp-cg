@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box go spin spin</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://code.jquery.com/pep/0.4.2/pep.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/ammo.js"></script>
+    <script src="https://preview.babylonjs.com/cannon.js"></script>
+    <script src="https://preview.babylonjs.com/Oimo.js"></script>
+    <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+    <script src="https://preview.babylonjs.com/babylon.js"></script>
+    <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+    <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+    <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+    <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+    <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+    <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <style>
+        html,body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #render {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="render"></canvas>
+
+    <!-- Shaders -->
+    <script type="application/vertexShader" id="vertexShaderCode">
+        #ifdef GL_ES
+            precision highp float;
+        #endif
+
+        attribute vec3 position;
+        attribute vec2 uv;
+
+        uniform mat4 worldViewProjection;
+
+        varying vec2 vUV;
+
+        uniform float time;
+
+        void main(void) {
+            vec3 v = position;
+            v.x += sin(2.0 * position.y + (time)) * 0.5;
+            gl_Position = worldViewProjection * vec4(position, 1.0);
+            vUV = uv;
+        }
+    </script>
+    <script type="application/fragmentShader" id="fragmentShaderCode">
+        #ifdef GL_ES
+            precision mediump float;
+        #endif     
+        
+        varying vec2 vUV;
+
+        uniform sampler2D textureSampler;
+
+        void main(void) {
+            gl_FragColor = texture2D(textureSampler, vUV);
+        }
+    </script>
+
+    <!-- Scene -->
+    <script>
+        let canvas = document.getElementById("render")
+        let engine = new BABYLON.Engine(canvas, true)
+        // let scene = new BABYLON.Scene(engine);
+
+        "use strict";
+
+        let hour = 0;
+        let minute = 0;
+        let second = 0;
+        let millisecond = 0;
+
+        let cron;
+
+        function start() {
+            stop();
+            cron = setInterval(() => { timer(); }, 100);
+            // cron = setTimeout(timer, 100);
+        }
+
+        function stop() {
+            clearInterval(cron);
+            // clearTimeout(cron);
+            // setTimeout(stop, 100);
+        }
+
+        function timer() {
+
+            if ((millisecond += 10) == 1000) {
+                millisecond = 0;
+                second++;
+            }
+            if (second == 60) {
+                second = 0;
+                minute++;
+            }
+            if (minute == 60) {
+                minute = 0;
+                hour++;
+            }
+
+            setTimeout(timer, 100);
+
+            // document.getElementById('hour').innerText = returnData(hour);
+            // document.getElementById('minute').innerText = returnData(minute);
+            // document.getElementById('second').innerText = returnData(second);
+            // document.getElementById('millisecond').innerText = returnData(millisecond);
+              
+        }
+
+        function returnData(input) {
+        return input > 10 ? input : `0${input}`
+        }
+
+        const camera = (scene) => {
+            //Add the camera, to be shown as a cone and surrounding collision volume
+            var camera = new BABYLON.UniversalCamera("MyCamera", new BABYLON.Vector3(-50, 25, -20), scene);
+            camera.minZ = 1;
+            camera.attachControl(canvas, true);
+            camera.speed = 0.02;
+            camera.angularSpeed = 0.05;
+            camera.angle = Math.PI/2;
+            camera.direction = new BABYLON.Vector3(Math.cos(camera.angle), 0, Math.sin(camera.angle));
+            camera.inertia = 0;
+            camera.angularSensibility = 5000;  // sort of kills mouse drags
+            
+            camera.attachControl(canvas, true);
+
+            //Gravity and Collisions Enabled
+            scene.gravity = new BABYLON.Vector3(0, 0.9, 0);
+            scene.collisionsEnabled = true;
+
+            camera.checkCollisions = true;
+            camera.applyGravity = true;
+
+            camera.ellipsoid = new BABYLON.Vector3(1, 1, 1);
+            camera.ellipsoidOffset = new BABYLON.Vector3(0, 1, 0); 
+
+            scene.activeCamera = camera;
+            scene.activeCamera.attachControl(canvas);
+
+            // scene.activeCamera.push(camera);
+    
+            /* New Input Management for Camera
+            __________________________________*/
+            
+            // First remove the default management.
+            camera.inputs.removeByType("FreeCameraKeyboardMoveInput");
+            camera.inputs.removeByType("FreeCameraMouseInput");
+            
+            //Key Input Manager To Use Keys to Move Forward and BackWard and Look to the Left or Right
+            var FreeCameraKeyboardWalkInput = function () {
+                this._keys = [];
+                this.keysUp = [38];
+                this.keysDown = [40];
+                this.keysLeft = [37];
+                this.keysRight = [39];
+            }
+            
+            //Add attachment controls
+            FreeCameraKeyboardWalkInput.prototype.attachControl = function (noPreventDefault) {
+                var _this = this;
+                var engine = this.camera.getEngine();
+                var element = engine.getInputElement();
+                if (!this._onKeyDown) {
+                    element.tabIndex = 1;
+                    this._onKeyDown = function (evt) {                 
+                        if (_this.keysUp.indexOf(evt.keyCode) !== -1 ||
+                            _this.keysDown.indexOf(evt.keyCode) !== -1 ||
+                            _this.keysLeft.indexOf(evt.keyCode) !== -1 ||
+                            _this.keysRight.indexOf(evt.keyCode) !== -1) {
+                            var index = _this._keys.indexOf(evt.keyCode);
+                            if (index === -1) {
+                                _this._keys.push(evt.keyCode);
+                            }
+                            if (!noPreventDefault) {
+                                evt.preventDefault();
+                            }
+                        }
+                    };
+                    this._onKeyUp = function (evt) {
+                        if (_this.keysUp.indexOf(evt.keyCode) !== -1 ||
+                            _this.keysDown.indexOf(evt.keyCode) !== -1 ||
+                            _this.keysLeft.indexOf(evt.keyCode) !== -1 ||
+                            _this.keysRight.indexOf(evt.keyCode) !== -1) {
+                            var index = _this._keys.indexOf(evt.keyCode);
+                            if (index >= 0) {
+                                _this._keys.splice(index, 1);
+                            }
+                            if (!noPreventDefault) {
+                                evt.preventDefault();
+                            }
+                        }
+                    };
+                    element.addEventListener("keydown", this._onKeyDown, false);
+                    element.addEventListener("keyup", this._onKeyUp, false);
+                }
+            };
+
+
+            //Add detachment controls
+            FreeCameraKeyboardWalkInput.prototype.detachControl = function () {
+                var engine = this.camera.getEngine();
+                var element = engine.getInputElement();
+                if (this._onKeyDown) {
+                    element.removeEventListener("keydown", this._onKeyDown);
+                    element.removeEventListener("keyup", this._onKeyUp);
+                    BABYLON.Tools.UnregisterTopRootEvents([
+                        { name: "blur", handler: this._onLostFocus }
+                    ]);
+                    this._keys = [];
+                    this._onKeyDown = null;
+                    this._onKeyUp = null;
+                }
+            };
+
+            //Keys movement control by checking inputs
+            FreeCameraKeyboardWalkInput.prototype.checkInputs = function () {
+                if (this._onKeyDown) {
+                    var camera = this.camera;
+                    for (var index = 0; index < this._keys.length; index++) {
+                        var keyCode = this._keys[index];
+                        var speed = camera.speed;
+                        if (this.keysLeft.indexOf(keyCode) !== -1) {
+                            camera.rotation.y -= camera.angularSpeed;
+                            camera.direction.copyFromFloats(0, 0, 0);                
+                        }
+                        else if (this.keysUp.indexOf(keyCode) !== -1) {
+                            // camera.rotation.x -= camera.angularSpeed;
+                            camera.position.addInPlace(camera.getDirection(BABYLON.Vector3.Forward()));            
+                            camera.direction.copyFromFloats(-speed, 0, 0);   
+                        }
+                        else if (this.keysRight.indexOf(keyCode) !== -1) {
+                            camera.rotation.y += camera.angularSpeed;
+                            camera.direction.copyFromFloats(0, 0, 0);
+                        }
+                        else if (this.keysDown.indexOf(keyCode) !== -1) {
+                            // camera.rotation.x += camera.angularSpeed;
+                            camera.direction.copyFromFloats(-speed, 0, 0);
+                        }
+                        if (camera.getScene().useRightHandedSystem) {
+                            camera.direction.z *= -1;
+                        }
+                        camera.getViewMatrix().invertToRef(camera._cameraTransformMatrix);
+                        BABYLON.Vector3.TransformNormalToRef(camera.direction, camera._cameraTransformMatrix, camera._transformedDirection);
+                        camera.cameraDirection.addInPlace(camera._transformedDirection);
+                    }
+                }
+            };
+
+            //Add the onLostFocus function
+            FreeCameraKeyboardWalkInput.prototype._onLostFocus = function (e) {
+                this._keys = [];
+            };
+            
+            //Add the two required functions for the control Name
+            FreeCameraKeyboardWalkInput.prototype.getClassName = function () {
+                return "FreeCameraKeyboardWalkInput";
+            };
+
+            FreeCameraKeyboardWalkInput.prototype.getSimpleName = function () {
+                return "keyboard";
+            };
+            
+            //Add the new keys input manager to the camera.
+            camera.inputs.add(new FreeCameraKeyboardWalkInput());
+
+
+
+            //The Mouse Manager to use the mouse (touch) to search around including above and below
+            var FreeCameraSearchInput = function (touchEnabled) {
+                if (touchEnabled === void 0) { touchEnabled = true; }
+                this.touchEnabled = touchEnabled;
+                this.buttons = [0, 1, 2];
+                this.angularSensibility = 2000.0;
+                this.restrictionX = 100;
+                this.restrictionY = 60;
+            }
+
+            //add attachment control which also contains the code to react to the input from the mouse 
+            FreeCameraSearchInput.prototype.attachControl = function (noPreventDefault) {
+                var _this = this;
+                var engine = this.camera.getEngine();
+                var element = engine.getInputElement();
+                var angle = {x:0, y:0};
+                if (!this._pointerInput) {
+                    this._pointerInput = function (p, s) {
+                        var evt = p.event;
+                        if (!_this.touchEnabled && evt.pointerType === "touch") {
+                            return;
+                        }
+                        if (p.type !== BABYLON.PointerEventTypes.POINTERMOVE && _this.buttons.indexOf(evt.button) === -1) {          
+                            return;
+                        }
+                        if (p.type === BABYLON.PointerEventTypes.POINTERDOWN) {          
+                            try {
+                                evt.srcElement.setPointerCapture(evt.pointerId);
+                            }
+                            catch (e) {
+                                //Nothing to do with the error. Execution will continue.
+                            }
+                            _this.previousPosition = {
+                                x: evt.clientX,
+                                y: evt.clientY
+                            };
+                            if (!noPreventDefault) {
+                                evt.preventDefault();
+                                element.focus();
+                            }
+                        }
+                        else if (p.type === BABYLON.PointerEventTypes.POINTERUP) {          
+                            try {
+                                evt.srcElement.releasePointerCapture(evt.pointerId);
+                            }
+                            catch (e) {
+                                //Nothing to do with the error.
+                            }
+                            _this.previousPosition = null;
+                            if (!noPreventDefault) {
+                                evt.preventDefault();
+                            }
+                        }
+                        else if (p.type === BABYLON.PointerEventTypes.POINTERMOVE) {            
+                            if (!_this.previousPosition || engine.isPointerLock) {
+                                return;
+                            }
+                            var offsetX = evt.clientX - _this.previousPosition.x;
+                            var offsetY = evt.clientY - _this.previousPosition.y;                   
+                            angle.x +=offsetX;
+                            angle.y -=offsetY;  
+                            if(Math.abs(angle.x) > _this.restrictionX )  {
+                                angle.x -=offsetX;
+                            }
+                            if(Math.abs(angle.y) > _this.restrictionY )  {
+                                angle.y +=offsetY;
+                            }       
+                            if (_this.camera.getScene().useRightHandedSystem) {
+                                if(Math.abs(angle.x) < _this.restrictionX )  {
+                                    _this.camera.cameraRotation.y -= offsetX / _this.angularSensibility;
+                                }
+                            }
+                            else {
+                                if(Math.abs(angle.x) < _this.restrictionX )  {
+                                    _this.camera.cameraRotation.y += offsetX / _this.angularSensibility;
+                                }
+                            }
+                            if(Math.abs(angle.y) < _this.restrictionY )  {
+                                _this.camera.cameraRotation.x += offsetY / _this.angularSensibility;
+                            }
+                            _this.previousPosition = {
+                                x: evt.clientX,
+                                y: evt.clientY
+                            };
+                            if (!noPreventDefault) {
+                                evt.preventDefault();
+                            }
+                        }
+                    };
+                }
+                this._onSearchMove = function (evt) {       
+                    if (!engine.isPointerLock) {
+                        return;
+                    }       
+                    var offsetX = evt.movementX || evt.mozMovementX || evt.webkitMovementX || evt.msMovementX || 0;
+                    var offsetY = evt.movementY || evt.mozMovementY || evt.webkitMovementY || evt.msMovementY || 0;
+                    if (_this.camera.getScene().useRightHandedSystem) {
+                        _this.camera.cameraRotation.y -= offsetX / _this.angularSensibility;
+                    }
+                    else {
+                        _this.camera.cameraRotation.y += offsetX / _this.angularSensibility;
+                    }
+                    _this.camera.cameraRotation.x += offsetY / _this.angularSensibility;
+                    _this.previousPosition = null;
+                    if (!noPreventDefault) {
+                        evt.preventDefault();
+                    }
+                };
+                this._observer = this.camera.getScene().onPointerObservable.add(this._pointerInput, BABYLON.PointerEventTypes.POINTERDOWN | BABYLON.PointerEventTypes.POINTERUP | BABYLON.PointerEventTypes.POINTERMOVE);
+                element.addEventListener("mousemove", this._onSearchMove, false);
+            };
+
+            //Add detachment control
+            FreeCameraSearchInput.prototype.detachControl = function () {
+                var engine = this.camera.getEngine();
+                var element = engine.getInputElement();
+                if (this._observer && element) {
+                    this.camera.getScene().onPointerObservable.remove(this._observer);
+                    element.removeEventListener("mousemove", this._onSearchMove);
+                    this._observer = null;
+                    this._onSearchMove = null;
+                    this.previousPosition = null;
+                }
+            };
+
+            //Add the two required functions for names
+            FreeCameraSearchInput.prototype.getClassName = function () {
+                return "FreeCameraSearchInput";
+            };
+
+            FreeCameraSearchInput.prototype.getSimpleName = function () {
+                return "MouseSearchCamera";
+            };
+
+            //Add the new mouse input manager to the camera
+            camera.inputs.add(new FreeCameraSearchInput());
+
+            return camera;
+        }
+
+        var x = 0;
+        var enableMesh = false;
+        console.log(enableMesh);
+
+        const createCheckPointOne = (scene, material, enableMesh) => {
+            let torus = BABYLON.MeshBuilder.CreateTorusKnot("checkpoint_1", {tube: 0.1, radialSegments: 128, p:5, q:2}, scene);
+            console.log(enableMesh);
+            // torus.isPickable = enableMesh;
+            torus.scaling = new BABYLON.Vector3(0.3, 0.3, 0.3)
+            // torus.position = new BABYLON.Vector3(-4, 1, 10)
+        
+            torus.position = new BABYLON.Vector3(40, 25, -5)
+            torus.material = material;
+
+            BABYLON.Animation.CreateAndStartAnimation("anim", torus, "position", 30, 120,
+             torus.position, torus.position.add(new BABYLON.Vector3(0, 5, 0)));
+
+            torus.actionManager = new BABYLON.ActionManager(scene);
+            torus.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                x = x + 1;
+                alert(x);
+                torus.scaling = new BABYLON.Vector3(0, 0, 0)
+            }));
+
+            return torus;
+        }
+
+        const createCheckPointTwo = (scene, material, enableMesh) => {
+            // let sphere = BABYLON.MeshBuilder.CreateSphere("checkpoint_2", {}, scene);
+            // // let sphere = BABYLON.SceneLoader.Load("", "gold.glb", scene);
+            // // sphere.isPickable = enableMesh;
+            // sphere.scaling = new BABYLON.Vector3(1, 1, 1)
+            // // torus.position = new BABYLON.Vector3(-4, 1, 10)
+        
+            // sphere.position = new BABYLON.Vector3(-5, 25, -20)
+            // sphere.material = material;
+
+            // BABYLON.Animation.CreateAndStartAnimation("anims", sphere, "position", 30, 120,
+            //  sphere.position, sphere.position.add(new BABYLON.Vector3(5, 0, 0)));
+
+            // sphere.actionManager = new BABYLON.ActionManager(scene);
+            // sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+            //     x = x + 1;
+            //     alert(x);
+            //     sphere.scaling = new BABYLON.Vector3(0, 0, 0)
+            // }));
+
+            // return sphere;
+
+            // BABYLON.SceneLoader.ImportMesh("Snitch/", "gold.obj", scene, function (newMeshes) {
+            //     var sphere = newMeshes[0];
+            //     sphere.position = new BABYLON.Vector3(-5, 25, -20);
+            //     sphere.material = material;
+            // });
+
+             // var sp = new BABYLON.SceneLoader.ImportMesh("Snitch/", "gold.obj", scene, function (newMeshes) {
+            //     var sphere = newMeshes[0];
+            //     sphere.position = new BABYLON.Vector3(-5, 25, -20);
+            //     sphere.material = material;
+            // });
+
+            // return sphere;
+
+        }
+
+        const createCheckPointThree = (scene, material, enableMesh) => {
+  
+            let t = BABYLON.MeshBuilder.CreateTorus("checkpoint_3", {thickness: 0.25}, scene);
+            // t.isPickable = enableMesh;
+            t.scaling = new BABYLON.Vector3(1, 1, 1)
+            // torus.position = new BABYLON.Vector3(-4, 1, 10)
+        
+            t.position = new BABYLON.Vector3(105, 25, 15)
+            t.material = material;
+
+            BABYLON.Animation.CreateAndStartAnimation("animt", t, "position", 30, 120,
+             t.position, t.position.add(new BABYLON.Vector3(0, 0, 10)));
+
+            t.actionManager = new BABYLON.ActionManager(scene);
+            t.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                x = x + 1;
+                alert(x);
+                t.scaling = new BABYLON.Vector3(0, 0, 0)
+            }));
+
+            return t;
+        }
+
+        var scene = new BABYLON.Scene(engine);
+
+        var isButtonUp, isButtonDown = false;
+        BABYLON.SceneLoader.Append("city/", "city.babylon", engine, function (scene) {    
+
+            // BABYLON.SceneLoader.ImportMesh("Snitch/", "gold.obj", scene, function (newMeshes) {
+            //     var sphere = newMeshes[0];
+            //     sphere.position = new BABYLON.Vector3(-5, 25, -20);
+            //     // sphere.material = material;
+            // });
+
+            // // attach the camera to receive user input
+            // scene.activeCamera.attachControl(canvas, false);
+
+            // Create Camera
+            var cam = camera(scene);
+
+            // var scoreTexture = new BABYLON.DynamicTexture("scoreTexture", 512, scene, true);
+            // var scoreboard = BABYLON.Mesh.CreatePlane("scoreboard", 5, scene);
+            // // Position the scoreboard after the lane.
+            // scoreboard.position.z = 40;
+            // // Create a material for the scoreboard.
+            // scoreboard.material = new BABYLON.StandardMaterial("scoradboardMat", scene);
+            // // Set the diffuse texture to be the dynamic texture.
+            // scoreboard.material.diffuseTexture = scoreTexture;
+
+            // GUI
+            var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+            var button1 = BABYLON.GUI.Button.CreateSimpleButton("but1", "Click Me");
+            button1.width = "150px";
+            button1.height = "40px";
+            button1.color = "white";
+            button1.cornerRadius = 20;
+            button1.background = "green";
+            // button1.isPointerBlocker = true;
+            button1.onPointerUpObservable.add(function() {
+                enableMesh = true;
+                button1.isVisible = false;
+                start();
+                // var text1 = new BABYLON.GUI.TextBlock();
+                // text1.text = returnData(hour);
+                // text1.color = "black";
+                // text1.fontSize = 24;
+                // text1.top = -300;
+                // advancedTexture.addControl(text1); 
+                // var text2 = new BABYLON.GUI.TextBlock();
+                // text2.text = returnData(minute);
+                // text2.color = "black";
+                // text2.fontSize = 24;
+                // text2.top = -200;
+                // advancedTexture.addControl(text2); 
+                // var text3 = new BABYLON.GUI.TextBlock();
+                // text3.text = returnData(second);
+                // text3.color = "black";
+                // text3.fontSize = 24;
+                // text3.top = -300;
+                // advancedTexture.addControl(text3); 
+                // var text4 = new BABYLON.GUI.TextBlock();
+                // text4.text = returnData(millisecond);
+                // text4.color = "black";
+                // text4.fontSize = 24;
+                // text4.top = -300;
+                // advancedTexture.addControl(text4); 
+                alert("you did it!");
+            });
+            advancedTexture.addControl(button1);  
+
+            var buttonFwd = BABYLON.GUI.Button.CreateSimpleButton("fwdB", "Forward"); 
+            buttonFwd.width = "200px";
+            buttonFwd.height = "50px";
+            buttonFwd.color = "white";
+            buttonFwd.background = "green";
+            buttonFwd.top = 300;
+            buttonFwd.paddingRight = "100px";
+            buttonFwd.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+            buttonFwd.onPointerDownObservable.add(function () {
+                isButtonUp = true;
+            });
+            buttonFwd.onPointerUpObservable.add(() => {
+                isButtonUp = false;
+            });
+
+            advancedTexture.addControl(buttonFwd);
+
+            var buttonBack = BABYLON.GUI.Button.CreateSimpleButton("buttonBack", "Backward");
+            buttonBack.width = "200px";
+            buttonBack.height = "50px";
+            buttonBack.color = "white";
+            buttonBack.background = "green";
+            buttonBack.top = 350;
+            buttonBack.paddingRight = "100px";
+            buttonBack.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+            buttonBack.onPointerDownObservable.add(function () {
+                isButtonDown = true;
+            });
+            buttonBack.onPointerUpObservable.add(() => {
+                isButtonDown = false;
+            });
+
+            advancedTexture.addControl(buttonBack);
+
+            // Define shader material
+            var shaderMaterial = new BABYLON.ShaderMaterial("shader", scene, {
+                vertexElement: "vertexShaderCode",
+                fragmentElement: "fragmentShaderCode"
+            }, {
+                attributes: ["position", "normal", "uv"],
+                uniforms: ["world", "worldView", "worldViewProjection", "view", "project"]
+            });
+            var mainTexture = new BABYLON.Texture("g.jpg", scene);
+            shaderMaterial.setTexture("textureSampler", mainTexture);
+
+            // Sky box
+            var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:250}, scene);
+            var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("skybox/skybox", scene);
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+
+            skybox.infiniteDistance = true;
+            skyboxMaterial.disableLighting = true;
+            skybox.material = skyboxMaterial;
+
+            scene.fogMode = BABYLON.Scene.FOGMODE_EXP;
+            scene.fogDensity = 0.01;
+            scene.fogColor = new BABYLON.Color3(0.9, 0.9, 0.85);
+            
+            // Spawn the checkpoints
+            var torus = createCheckPointOne(scene, shaderMaterial, enableMesh);
+            // var goldSphere = createCheckPointTwo(scene, shaderMaterial, enableMesh);
+            var t = createCheckPointThree(scene, shaderMaterial, enableMesh);
+            
+            var time = -1;
+            scene.registerBeforeRender(function () {
+                if (isButtonUp) {
+                    cam.position.addInPlace(cam.getDirection(BABYLON.Vector3.Forward()));
+                }
+                if (isButtonDown) {
+                    cam.position.addInPlace(cam.getDirection(BABYLON.Vector3.Backward()));
+                }
+                // console.log(enableMesh)
+                torus.isPickable = enableMesh;
+                // goldSphere.isPickable = enableMesh;
+                t.isPickable = enableMesh;
+                // button1.onPointerUpObservable.add(function() {
+                //     start();
+                //     // for (i = 0; i < returnData(second); i++){
+                //         // var text1 = new BABYLON.GUI.TextBlock();
+                //         // text1.text = returnData(second);
+                //         // text1.color = "black";
+                //         // text1.fontSize = 24;
+                //         // text1.top = -300;
+                //         // advancedTexture.addControl(text1); 
+
+                //         console.log(returnData(second));
+
+                //     var timeSec = returnData(second);
+                //     if (timeSec != time) {
+                //         time = timeSec;
+                //         var text1 = new BABYLON.GUI.TextBlock();
+                //         // text1.clear();
+                //         text1.text = time;
+                //         text1.color = "black";
+                //         text1.fontSize = 24;
+                //         text1.top = -300;
+                //         advancedTexture.addControl(text1); 
+                //         // Clear the canvas. 
+                //         // scoreTexture.clear();
+                //         // Draw the text using a white font on black background.
+                //         // scoreTexture.drawText(time, 40, 100,
+                //         // "bold 72px Arial", "white", "black");
+                //     }
+                //     setTimeout(timer, 100);                    
+                // });
+
+                var timeSec = returnData(second);
+                // if (timeSec != time) {
+                //     time = timeSec;
+                    // var text1 = new BABYLON.GUI.TextBlock();
+                    // text1.clearInterval;
+                //     // text1.clear();
+                //     text1.text = time;
+                //     text1.color = "black";
+                //     text1.fontSize = 24;
+                //     text1.top = -300;
+                    // advancedTexture.addControl(text1); 
+                // }
+
+                // console.log(x);
+                // console.log(time);
+                if (x == 3 || x > 3){
+                    stop();
+                    // clearInterval(cron);
+                    var endT = returnData(second);
+                    var gameOver = new BABYLON.GUI.TextBlock();
+                    gameOver.text = "GAME OVER\n" + endT + " Seconds";
+                    gameOver.color = "white";
+                    gameOver.fontSize = 24;
+                    advancedTexture.addControl(gameOver);   
+
+                    // var text1 = new BABYLON.GUI.TextBlock();
+                    // // text1.clear();
+                    // text1.text = time;
+                    // text1.color = "black";
+                    // text1.fontSize = 24;
+                    // text1.top = -300;
+                    // advancedTexture.addControl(text1); 
+                    // var gameOver = new BABYLON.GUI.TextBlock();
+                    // gameOver.name = "clock";
+                    // gameOver.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
+                    // gameOver.fontSize = "48px";
+                    // gameOver.color = "black";
+                    // gameOver.text = "GAME OVER";
+                    // // gameOver.resizeToFit = true;
+                    // gameOver.width = "150px"
+                    // gameOver.height = "40px";
+                    // gameOver.fontFamily = "Viga";
+                    // advancedTexture.addControl(gameOver);
+                }
+            })
+
+            engine.runRenderLoop(() => {
+                scene.render()
+            })
+            window.addEventListener("resize", () => {
+                engine.resize()
+            })
+        });
+
+    </script>
+</body>
+</html>
