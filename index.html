@@ -100,7 +100,7 @@
 
         function stop() {
             clearInterval(cron);
-            // clearTimeout(cron);
+            clearTimeout(timer);
             // setTimeout(stop, 100);
         }
 
@@ -464,17 +464,24 @@
             // sphere.position = new BABYLON.Vector3(-5, 25, -20)
             // sphere.material = material;
 
-            // BABYLON.Animation.CreateAndStartAnimation("anims", sphere, "position", 30, 120,
-            //  sphere.position, sphere.position.add(new BABYLON.Vector3(5, 0, 0)));
+            var cylinder = BABYLON.SceneLoader.ImportMesh("", "https://raw.githubusercontent.com/BabylonJS/MeshesLibrary/master/", "roundedCylinder.glb", scene, function(newMeshes){
+                var cylinder = newMeshes[0].getChildMeshes()[0];
+                cylinder.material = material;
+                cylinder.position = new BABYLON.Vector3(-5, 25, -20);
+                cylinder.scaling = new BABYLON.Vector3(1, 1, 1);
 
-            // sphere.actionManager = new BABYLON.ActionManager(scene);
-            // sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
-            //     x = x + 1;
-            //     alert(x);
-            //     sphere.scaling = new BABYLON.Vector3(0, 0, 0)
-            // }));
+                BABYLON.Animation.CreateAndStartAnimation("animc", cylinder, "position", 30, 120,
+                    cylinder.position, cylinder.position.add(new BABYLON.Vector3(5, 0, 0)));
 
-            // return sphere;
+                cylinder.actionManager = new BABYLON.ActionManager(scene);
+                cylinder.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                    x = x + 1;
+                    alert(x);
+                    cylinder.scaling = new BABYLON.Vector3(0, 0, 0)
+                }));
+            });   
+
+            return cylinder;
 
             // BABYLON.SceneLoader.ImportMesh("Snitch/", "gold.obj", scene, function (newMeshes) {
             //     var sphere = newMeshes[0];
@@ -518,14 +525,16 @@
         var scene = new BABYLON.Scene(engine);
 
         var isButtonUp, isButtonDown = false;
-        BABYLON.SceneLoader.Append("city/", "city.babylon", engine, function (scene) {    
+        // BABYLON.SceneLoader.Append("Snitch/", "gold2.obj", scene, function (newMeshes) {
+        //         console.log(newMeshes)
+        //         // scene.createDefaultCameraOrLight(true, true, true);
+        //         var sphere = newMeshes;
+        //         sphere.position = new BABYLON.Vector3(-5, 25, -20);
+        //         // sphere.material = material;
+        //     });
 
-            // BABYLON.SceneLoader.ImportMesh("Snitch/", "gold.obj", scene, function (newMeshes) {
-            //     var sphere = newMeshes[0];
-            //     sphere.position = new BABYLON.Vector3(-5, 25, -20);
-            //     // sphere.material = material;
-            // });
-
+        BABYLON.SceneLoader.Append("city/", "city.babylon", scene, function (scene) {    
+ 
             // // attach the camera to receive user input
             // scene.activeCamera.attachControl(canvas, false);
 
@@ -645,7 +654,7 @@
             
             // Spawn the checkpoints
             var torus = createCheckPointOne(scene, shaderMaterial, enableMesh);
-            // var goldSphere = createCheckPointTwo(scene, shaderMaterial, enableMesh);
+            var goldSphere = createCheckPointTwo(scene, shaderMaterial, enableMesh);
             var t = createCheckPointThree(scene, shaderMaterial, enableMesh);
             
             var time = -1;
@@ -658,7 +667,7 @@
                 }
                 // console.log(enableMesh)
                 torus.isPickable = enableMesh;
-                // goldSphere.isPickable = enableMesh;
+                goldSphere.isPickable = enableMesh;
                 t.isPickable = enableMesh;
                 // button1.onPointerUpObservable.add(function() {
                 //     start();
@@ -708,7 +717,8 @@
                 // console.log(time);
                 if (x == 3 || x > 3){
                     stop();
-                    // clearInterval(cron);
+                    clearTimeout(timer);
+                    clearInterval(cron);
                     var endT = returnData(second);
                     var gameOver = new BABYLON.GUI.TextBlock();
                     gameOver.text = "GAME OVER\n" + endT + " Seconds";
@@ -736,8 +746,14 @@
                     // advancedTexture.addControl(gameOver);
                 }
             })
-
+            var time = 0;
             engine.runRenderLoop(() => {
+                var shaderMaterial = scene.getMaterialByName("shader");
+                    shaderMaterial.setFloat("time", time);
+                    time += 0.1;
+
+                    shaderMaterial.setVector3("cameraPosition", scene.activeCamera.position);
+
                 scene.render()
             })
             window.addEventListener("resize", () => {
