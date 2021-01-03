@@ -464,24 +464,30 @@
             // sphere.position = new BABYLON.Vector3(-5, 25, -20)
             // sphere.material = material;
 
-            var cylinder = BABYLON.SceneLoader.ImportMesh("", "https://raw.githubusercontent.com/BabylonJS/MeshesLibrary/master/", "roundedCylinder.glb", scene, function(newMeshes){
-                var cylinder = newMeshes[0].getChildMeshes()[0];
-                cylinder.material = material;
-                cylinder.position = new BABYLON.Vector3(-5, 25, -20);
-                cylinder.scaling = new BABYLON.Vector3(1, 1, 1);
+            // var click = new BABYLON.Sound("click", "click.wav", scene);
+            // var cylinder = BABYLON.SceneLoader.ImportMesh("", "https://raw.githubusercontent.com/BabylonJS/MeshesLibrary/master/", "roundedCylinder.glb", scene, function(newMeshes){
+            var wand = BABYLON.SceneLoader.ImportMesh("", "wand-obj/", "wand.obj", scene, function (newMeshes) {
+                // var cylinder = newMeshes[0].getChildMeshes()[0];
+                console.log(enableMesh);
+                var wand = newMeshes[0];
+                // cylinder.material = matCerial;
+                // wand.isPickable = enableMesh;
+                wand.position = new BABYLON.Vector3(-5, 25, -20);
+                wand.scaling = new BABYLON.Vector3(1, 1, 1);
 
-                BABYLON.Animation.CreateAndStartAnimation("animc", cylinder, "position", 30, 120,
-                    cylinder.position, cylinder.position.add(new BABYLON.Vector3(5, 0, 0)));
+                BABYLON.Animation.CreateAndStartAnimation("animc", wand, "position", 30, 120,
+                    wand.position, wand.position.add(new BABYLON.Vector3(5, 0, 0)));
 
-                cylinder.actionManager = new BABYLON.ActionManager(scene);
-                cylinder.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                wand.actionManager = new BABYLON.ActionManager(scene);
+                wand.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                    // click.play();
                     x = x + 1;
                     alert(x);
-                    cylinder.scaling = new BABYLON.Vector3(0, 0, 0)
+                    wand.scaling = new BABYLON.Vector3(0, 0, 0)
                 }));
             });   
 
-            return cylinder;
+            return wand;
 
             // BABYLON.SceneLoader.ImportMesh("Snitch/", "gold.obj", scene, function (newMeshes) {
             //     var sphere = newMeshes[0];
@@ -535,6 +541,8 @@
 
         BABYLON.SceneLoader.Append("city/", "city.babylon", scene, function (scene) {    
  
+            // var ground = BABYLON.Mesh.CreateGround("ground", 0, 0, 0, scene);
+  
             // // attach the camera to receive user input
             // scene.activeCamera.attachControl(canvas, false);
 
@@ -553,16 +561,24 @@
             // GUI
             var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
 
-            var button1 = BABYLON.GUI.Button.CreateSimpleButton("but1", "Click Me");
+            var control = new BABYLON.GUI.TextBlock();
+            control.text = "Use keyboard arrow left and right \n to look left and right";
+            control.color = "white";
+            control.fontSize = 20;
+            control.top = -400;
+            advancedTexture.addControl(control);   
+
+            var button1 = BABYLON.GUI.Button.CreateSimpleButton("but1", "Start");
             button1.width = "150px";
             button1.height = "40px";
             button1.color = "white";
             button1.cornerRadius = 20;
-            button1.background = "green";
+            button1.background = "blue";
             // button1.isPointerBlocker = true;
             button1.onPointerUpObservable.add(function() {
                 enableMesh = true;
                 button1.isVisible = false;
+                control.isVisible = false;
                 start();
                 // var text1 = new BABYLON.GUI.TextBlock();
                 // text1.text = returnData(hour);
@@ -570,25 +586,7 @@
                 // text1.fontSize = 24;
                 // text1.top = -300;
                 // advancedTexture.addControl(text1); 
-                // var text2 = new BABYLON.GUI.TextBlock();
-                // text2.text = returnData(minute);
-                // text2.color = "black";
-                // text2.fontSize = 24;
-                // text2.top = -200;
-                // advancedTexture.addControl(text2); 
-                // var text3 = new BABYLON.GUI.TextBlock();
-                // text3.text = returnData(second);
-                // text3.color = "black";
-                // text3.fontSize = 24;
-                // text3.top = -300;
-                // advancedTexture.addControl(text3); 
-                // var text4 = new BABYLON.GUI.TextBlock();
-                // text4.text = returnData(millisecond);
-                // text4.color = "black";
-                // text4.fontSize = 24;
-                // text4.top = -300;
-                // advancedTexture.addControl(text4); 
-                alert("you did it!");
+                // alert("you did it!");
             });
             advancedTexture.addControl(button1);  
 
@@ -596,7 +594,7 @@
             buttonFwd.width = "200px";
             buttonFwd.height = "50px";
             buttonFwd.color = "white";
-            buttonFwd.background = "green";
+            buttonFwd.background = "blue";
             buttonFwd.top = 300;
             buttonFwd.paddingRight = "100px";
             buttonFwd.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
@@ -609,11 +607,11 @@
 
             advancedTexture.addControl(buttonFwd);
 
-            var buttonBack = BABYLON.GUI.Button.CreateSimpleButton("buttonBack", "Backward");
+            var buttonBack = BABYLON.GUI.Button.CreateSimpleButton("buttonBack", "Back");
             buttonBack.width = "200px";
             buttonBack.height = "50px";
             buttonBack.color = "white";
-            buttonBack.background = "green";
+            buttonBack.background = "blue";
             buttonBack.top = 350;
             buttonBack.paddingRight = "100px";
             buttonBack.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
@@ -654,7 +652,7 @@
             
             // Spawn the checkpoints
             var torus = createCheckPointOne(scene, shaderMaterial, enableMesh);
-            var goldSphere = createCheckPointTwo(scene, shaderMaterial, enableMesh);
+            var wand = createCheckPointTwo(scene, shaderMaterial, enableMesh);
             var t = createCheckPointThree(scene, shaderMaterial, enableMesh);
             
             var time = -1;
@@ -667,7 +665,7 @@
                 }
                 // console.log(enableMesh)
                 torus.isPickable = enableMesh;
-                goldSphere.isPickable = enableMesh;
+                wand.isPickable = enableMesh;
                 t.isPickable = enableMesh;
                 // button1.onPointerUpObservable.add(function() {
                 //     start();
