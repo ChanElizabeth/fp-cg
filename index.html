@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Box go spin spin</title>
+    <title>The Deathly Hallows Quest</title>
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
@@ -120,12 +120,6 @@
             }
 
             setTimeout(timer, 100);
-
-            // document.getElementById('hour').innerText = returnData(hour);
-            // document.getElementById('minute').innerText = returnData(minute);
-            // document.getElementById('second').innerText = returnData(second);
-            // document.getElementById('millisecond').innerText = returnData(millisecond);
-              
         }
 
         function returnData(input) {
@@ -432,46 +426,55 @@
         console.log(enableMesh);
 
         const createCheckPointOne = (scene, material, enableMesh) => {
-            let torus = BABYLON.MeshBuilder.CreateTorusKnot("checkpoint_1", {tube: 0.1, radialSegments: 128, p:5, q:2}, scene);
-            console.log(enableMesh);
-            // torus.isPickable = enableMesh;
-            torus.scaling = new BABYLON.Vector3(0.3, 0.3, 0.3)
-            // torus.position = new BABYLON.Vector3(-4, 1, 10)
-        
-            torus.position = new BABYLON.Vector3(40, 25, -5)
-            torus.material = material;
+          
+            // torus.position = new BABYLON.Vector3(40, 25, -5)
 
-            BABYLON.Animation.CreateAndStartAnimation("anim", torus, "position", 30, 120,
-             torus.position, torus.position.add(new BABYLON.Vector3(0, 5, 0)));
+            var cape = BABYLON.SceneLoader.ImportMesh("", "cape/", "trixie-cape.obj", scene, function (newMeshes) {
+                console.log(enableMesh);
+                var cape = newMeshes[0];
+                cape.material = material;
+                // wand.isPickable = enableMesh;
+                cape.rotation.z = Math.PI;
+                cape.position = new BABYLON.Vector3(-8, 25, -20);
+                cape.scaling = new BABYLON.Vector3(10, 10, 10);
 
-            torus.actionManager = new BABYLON.ActionManager(scene);
-            torus.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
-                x = x + 1;
-                alert(x);
-                torus.scaling = new BABYLON.Vector3(0, 0, 0)
-            }));
+                BABYLON.Animation.CreateAndStartAnimation("anim", cape, "position", 30, 120,
+                    cape.position, cape.position.add(new BABYLON.Vector3(0, 5, 0)));
 
-            return torus;
+                // if (enableMesh == true){
+                //     cape.actionManager = new BABYLON.ActionManager(scene);
+                //     cape.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                //         // click.play();
+                //         x = x + 1;
+                //         alert(x);
+                //         cape.scaling = new BABYLON.Vector3(0, 0, 0)
+                //     }));
+                // }
+                // scene.registerBeforeRender(function (){
+                //     console.log(enableMesh);
+                //     if (enableMesh == true){
+                        cape.actionManager = new BABYLON.ActionManager(scene);
+                        cape.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                            // click.play();
+                            x = x + 1;
+                            alert(x);
+                            cape.scaling = new BABYLON.Vector3(0, 0, 0)
+                        }));
+            //         }
+            //     })
+            });   
+
+            return cape;
         }
 
         const createCheckPointTwo = (scene, material, enableMesh) => {
-            // let sphere = BABYLON.MeshBuilder.CreateSphere("checkpoint_2", {}, scene);
-            // // let sphere = BABYLON.SceneLoader.Load("", "gold.glb", scene);
-            // // sphere.isPickable = enableMesh;
-            // sphere.scaling = new BABYLON.Vector3(1, 1, 1)
-            // // torus.position = new BABYLON.Vector3(-4, 1, 10)
-        
-            // sphere.position = new BABYLON.Vector3(-5, 25, -20)
-            // sphere.material = material;
-
-            // var click = new BABYLON.Sound("click", "click.wav", scene);
-            // var cylinder = BABYLON.SceneLoader.ImportMesh("", "https://raw.githubusercontent.com/BabylonJS/MeshesLibrary/master/", "roundedCylinder.glb", scene, function(newMeshes){
+           
             var wand = BABYLON.SceneLoader.ImportMesh("", "wand-obj/", "wand.obj", scene, function (newMeshes) {
-                // var cylinder = newMeshes[0].getChildMeshes()[0];
                 console.log(enableMesh);
                 var wand = newMeshes[0];
-                // cylinder.material = matCerial;
-                // wand.isPickable = enableMesh;
+                // wand.isPickable = enableMesh
+                wand.material = material;
+                wand.rotation.z = Math.PI/4;
                 wand.position = new BABYLON.Vector3(-5, 25, -20);
                 wand.scaling = new BABYLON.Vector3(1, 1, 1);
 
@@ -489,74 +492,45 @@
 
             return wand;
 
-            // BABYLON.SceneLoader.ImportMesh("Snitch/", "gold.obj", scene, function (newMeshes) {
-            //     var sphere = newMeshes[0];
-            //     sphere.position = new BABYLON.Vector3(-5, 25, -20);
-            //     sphere.material = material;
-            // });
-
-             // var sp = new BABYLON.SceneLoader.ImportMesh("Snitch/", "gold.obj", scene, function (newMeshes) {
-            //     var sphere = newMeshes[0];
-            //     sphere.position = new BABYLON.Vector3(-5, 25, -20);
-            //     sphere.material = material;
-            // });
-
-            // return sphere;
-
         }
 
         const createCheckPointThree = (scene, material, enableMesh) => {
   
-            let t = BABYLON.MeshBuilder.CreateTorus("checkpoint_3", {thickness: 0.25}, scene);
-            // t.isPickable = enableMesh;
-            t.scaling = new BABYLON.Vector3(1, 1, 1)
-            // torus.position = new BABYLON.Vector3(-4, 1, 10)
-        
-            t.position = new BABYLON.Vector3(105, 25, 15)
-            t.material = material;
+            var stone = BABYLON.SceneLoader.ImportMesh("", "prism-obj/", "prism.obj", scene, function (newMeshes) {
+                console.log(enableMesh);
+                var stone = newMeshes[0];
+                stone.material = material;
+                // stone.rotation.z = Math.PI/4;
+                stone.position = new BABYLON.Vector3(105, 25, 15);
+                stone.scaling = new BABYLON.Vector3(0.8, 0.8, 0.8);
 
-            BABYLON.Animation.CreateAndStartAnimation("animt", t, "position", 30, 120,
-             t.position, t.position.add(new BABYLON.Vector3(0, 0, 10)));
+                BABYLON.Animation.CreateAndStartAnimation("anims", stone, "position", 30, 120,
+                    stone.position, stone.position.add(new BABYLON.Vector3(0, 0, 10)));
 
-            t.actionManager = new BABYLON.ActionManager(scene);
-            t.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
-                x = x + 1;
-                alert(x);
-                t.scaling = new BABYLON.Vector3(0, 0, 0)
-            }));
+                stone.actionManager = new BABYLON.ActionManager(scene);
+                stone.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                    // click.play();
+                    x = x + 1;
+                    alert(x);
+                    stone.scaling = new BABYLON.Vector3(0, 0, 0)
+                }));
+            });   
 
-            return t;
+            return stone;
         }
 
         var scene = new BABYLON.Scene(engine);
 
         var isButtonUp, isButtonDown = false;
-        // BABYLON.SceneLoader.Append("Snitch/", "gold2.obj", scene, function (newMeshes) {
-        //         console.log(newMeshes)
-        //         // scene.createDefaultCameraOrLight(true, true, true);
-        //         var sphere = newMeshes;
-        //         sphere.position = new BABYLON.Vector3(-5, 25, -20);
-        //         // sphere.material = material;
-        //     });
 
         BABYLON.SceneLoader.Append("city/", "city.babylon", scene, function (scene) {    
+        // BABYLON.SceneLoader.Load("city-babylon/", "city.babylon", engine, function (scene) {    
  
-            // var ground = BABYLON.Mesh.CreateGround("ground", 0, 0, 0, scene);
-  
             // // attach the camera to receive user input
             // scene.activeCamera.attachControl(canvas, false);
 
             // Create Camera
             var cam = camera(scene);
-
-            // var scoreTexture = new BABYLON.DynamicTexture("scoreTexture", 512, scene, true);
-            // var scoreboard = BABYLON.Mesh.CreatePlane("scoreboard", 5, scene);
-            // // Position the scoreboard after the lane.
-            // scoreboard.position.z = 40;
-            // // Create a material for the scoreboard.
-            // scoreboard.material = new BABYLON.StandardMaterial("scoradboardMat", scene);
-            // // Set the diffuse texture to be the dynamic texture.
-            // scoreboard.material.diffuseTexture = scoreTexture;
 
             // GUI
             var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
@@ -568,25 +542,33 @@
             control.top = -400;
             advancedTexture.addControl(control);   
 
-            var button1 = BABYLON.GUI.Button.CreateSimpleButton("but1", "Start");
+            var title = new BABYLON.GUI.TextBlock();
+            title.text = "THE DEATHLY HALLOWS QUEST";
+            title.color = "black";
+            title.fontSize = 30;
+            title.top = -120;
+            advancedTexture.addControl(title);  
+
+            var description = new BABYLON.GUI.TextBlock();
+            description.text = "Find the three magical objects and become the Master of Death 💀👑";
+            description.color = "grey";
+            description.fontSize = 20;
+            description.top = -80;
+            advancedTexture.addControl(description);   
+
+            var button1 = BABYLON.GUI.Button.CreateSimpleButton("but1", "Click Me");
             button1.width = "150px";
             button1.height = "40px";
             button1.color = "white";
             button1.cornerRadius = 20;
             button1.background = "blue";
-            // button1.isPointerBlocker = true;
             button1.onPointerUpObservable.add(function() {
                 enableMesh = true;
                 button1.isVisible = false;
                 control.isVisible = false;
+                title.isVisible = false;
+                description.isVisible = false;
                 start();
-                // var text1 = new BABYLON.GUI.TextBlock();
-                // text1.text = returnData(hour);
-                // text1.color = "black";
-                // text1.fontSize = 24;
-                // text1.top = -300;
-                // advancedTexture.addControl(text1); 
-                // alert("you did it!");
             });
             advancedTexture.addControl(button1);  
 
@@ -632,7 +614,7 @@
                 attributes: ["position", "normal", "uv"],
                 uniforms: ["world", "worldView", "worldViewProjection", "view", "project"]
             });
-            var mainTexture = new BABYLON.Texture("g.jpg", scene);
+            var mainTexture = new BABYLON.Texture("black.jpg", scene);
             shaderMaterial.setTexture("textureSampler", mainTexture);
 
             // Sky box
@@ -651,11 +633,29 @@
             scene.fogColor = new BABYLON.Color3(0.9, 0.9, 0.85);
             
             // Spawn the checkpoints
-            var torus = createCheckPointOne(scene, shaderMaterial, enableMesh);
-            var wand = createCheckPointTwo(scene, shaderMaterial, enableMesh);
+            createCheckPointOne(scene, shaderMaterial, enableMesh);
+            var goldSphere = createCheckPointTwo(scene, shaderMaterial, enableMesh);
             var t = createCheckPointThree(scene, shaderMaterial, enableMesh);
             
             var time = -1;
+            
+            var count = 10
+            count++ // butuh ini biar masih keliatan detik 10 nya
+            var gameOver = new BABYLON.GUI.TextBlock();
+            gameOver.text = "GAME OVER\n" + count + " Seconds";
+            gameOver.color = "white";
+            gameOver.fontSize = 24;
+            gameOver.top = 100
+            gameOver.isVisible = false
+            advancedTexture.addControl(gameOver);   
+
+            var congratz = new BABYLON.GUI.TextBlock();
+            congratz.text = "CONGRATULATION you possess all the Deathly Hallows\nYou are the Master of Death 💀👑";
+            congratz.color = "white";
+            congratz.fontSize = 24;
+            congratz.isVisible = false
+            advancedTexture.addControl(congratz);   
+
             scene.registerBeforeRender(function () {
                 if (isButtonUp) {
                     cam.position.addInPlace(cam.getDirection(BABYLON.Vector3.Forward()));
@@ -664,84 +664,43 @@
                     cam.position.addInPlace(cam.getDirection(BABYLON.Vector3.Backward()));
                 }
                 // console.log(enableMesh)
-                torus.isPickable = enableMesh;
-                wand.isPickable = enableMesh;
+                // torus.isPickable = enableMesh;
+                goldSphere.isPickable = enableMesh;
                 t.isPickable = enableMesh;
-                // button1.onPointerUpObservable.add(function() {
-                //     start();
-                //     // for (i = 0; i < returnData(second); i++){
-                //         // var text1 = new BABYLON.GUI.TextBlock();
-                //         // text1.text = returnData(second);
-                //         // text1.color = "black";
-                //         // text1.fontSize = 24;
-                //         // text1.top = -300;
-                //         // advancedTexture.addControl(text1); 
 
-                //         console.log(returnData(second));
-
-                //     var timeSec = returnData(second);
-                //     if (timeSec != time) {
-                //         time = timeSec;
-                //         var text1 = new BABYLON.GUI.TextBlock();
-                //         // text1.clear();
-                //         text1.text = time;
-                //         text1.color = "black";
-                //         text1.fontSize = 24;
-                //         text1.top = -300;
-                //         advancedTexture.addControl(text1); 
-                //         // Clear the canvas. 
-                //         // scoreTexture.clear();
-                //         // Draw the text using a white font on black background.
-                //         // scoreTexture.drawText(time, 40, 100,
-                //         // "bold 72px Arial", "white", "black");
+                // if (enableMesh == true){
+                //     // meshAction(scene,  torus);
+                //     if (cape){
+                //     cape.actionManager = new BABYLON.ActionManager(scene);
+                //     cape.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickUpTrigger, function () {
+                //         // click.play();
+                //         x = x + 1;
+                //         alert(x);
+                //         cape.scaling = new BABYLON.Vector3(0, 0, 0)
+                //     }));
                 //     }
-                //     setTimeout(timer, 100);                    
-                // });
-
-                var timeSec = returnData(second);
-                // if (timeSec != time) {
-                //     time = timeSec;
-                    // var text1 = new BABYLON.GUI.TextBlock();
-                    // text1.clearInterval;
-                //     // text1.clear();
-                //     text1.text = time;
-                //     text1.color = "black";
-                //     text1.fontSize = 24;
-                //     text1.top = -300;
-                    // advancedTexture.addControl(text1); 
                 // }
 
+                var timeSec = returnData(second);
+
+                var ts = 5
                 // console.log(x);
                 // console.log(time);
                 if (x == 3 || x > 3){
                     stop();
-                    clearTimeout(timer);
-                    clearInterval(cron);
-                    var endT = returnData(second);
-                    var gameOver = new BABYLON.GUI.TextBlock();
-                    gameOver.text = "GAME OVER\n" + endT + " Seconds";
-                    gameOver.color = "white";
-                    gameOver.fontSize = 24;
-                    advancedTexture.addControl(gameOver);   
+                    // clearTimeout(timer);
+                    // clearInterval(cron);
 
-                    // var text1 = new BABYLON.GUI.TextBlock();
-                    // // text1.clear();
-                    // text1.text = time;
-                    // text1.color = "black";
-                    // text1.fontSize = 24;
-                    // text1.top = -300;
-                    // advancedTexture.addControl(text1); 
-                    // var gameOver = new BABYLON.GUI.TextBlock();
-                    // gameOver.name = "clock";
-                    // gameOver.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
-                    // gameOver.fontSize = "48px";
-                    // gameOver.color = "black";
-                    // gameOver.text = "GAME OVER";
-                    // // gameOver.resizeToFit = true;
-                    // gameOver.width = "150px"
-                    // gameOver.height = "40px";
-                    // gameOver.fontFamily = "Viga";
-                    // advancedTexture.addControl(gameOver);
+                    congratz.isVisible = true                    
+
+                    gameOver.isVisible = true
+                    if (!scene.deltaTime) return;
+                    // count -= (scene.deltaTime / 1000);
+                    // gameOver.text = "GAME OVER\n" + String(Math.round(count)) + " Seconds";
+                    // "CONGRATULATION you possess all the Deathly Hallows\nElder Wand, Resurrection Stone & Invisible Cloak\n\n" +
+                    gameOver.text = String(timeSec) + " Seconds";
+                    // gameOver.isVisible = false
+                    
                 }
             })
             var time = 0;
